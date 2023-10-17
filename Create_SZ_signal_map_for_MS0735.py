@@ -320,11 +320,7 @@ f.writeto('./MS0735_sims/MS0735_correct/ms0735_thermal_Jy_pix_MUSTANG_upperkTe.f
 
 f.info()
 
-end = timer()
-#print(end - start)
 
-end = timer()
-#print(end - start)
 
 
 
