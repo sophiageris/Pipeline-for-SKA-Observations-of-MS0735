@@ -19,7 +19,6 @@ import scipy.special as sc
 from astropy.cosmology import FlatLambdaCDM
 import astropy.units as u
 
-start = timer()
 # constants
 gamma = 0.3081 # shape parameter
 alpha = 1.0510 # shape parameter
@@ -125,13 +124,13 @@ def Bounds(rb, xb, yb, zb, num_pix, pix_size, z):
             Z_plus.append(zed_plus)
     z_plus = np.reshape(np.array(Z_plus),y_los1.shape)
             
-    for i in range(len(ex)):
-        for j in range(len(y)):
-            zed_minus = -(np.sqrt((rb**2)-((x_1[i][j]-xb)**2)-((y_1[i][j]-yb)**2)) + zb)*da # in Mpc
-            Z_minus.append(zed_minus)
-    z_minus = np.reshape(np.array(Z_minus),y_los1.shape)
-    
-    return z_plus, z_minus
+    for i in range(len(ex)):#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        for j in range(len(y)):#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            zed_minus = ((-np.sqrt((rb**2)-((x_1[i][j]-xb)**2)-((y_1[i][j]-yb)**2))) + zb)*da # in Mpc !!!!!!!!!!!WHEN I DO MUSTANG SIMS MAKE SURE ZB SHOULD BE + FOR BOTH THE + AND - BOUNDS!!!!!!!!!!
+            Z_minus.append(zed_minus)#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    z_minus = np.reshape(np.array(Z_minus),y_los1.shape)#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    return z_plus, z_minus#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 '''def Bounds2(rb, x_1, xb2, y_1, yb2, zb2, start, stop, pix_size):
     Z2 = []
@@ -245,6 +244,7 @@ def ymap_bubbles(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_ar
     #print(Z_plus, Z_minus)
     
     f = supp_func(*supp_args)
+    #f=1.5
     print(f)
 
     bubble1 = f*ymap(nu, z, M_500, xb, yb, rb, num_pix, pix_size, Z_minus, Z_plus)
@@ -261,7 +261,7 @@ def ymap_cluster_bubbles(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func,
     
     return total_y
 
-y_map = ymap_cluster_bubbles(14.11e9, 0.216, 8e14, 0.24, 0.67, 0, -0.33, -0.82, 0, 0.5, f_thermal, [14.11e9, 1258.93 ], 512, 2/60)
+y_map = ymap_cluster_bubbles(14.11e9, 0.216, 8e14, 0.24, 0.67, 0, -0.33, -0.82, 0, 0.5, f_nonthermal, [14.11e9, 100, 1e5, 6], 512, 2/60)
 
 
 def calculating_ymap_total(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size):
@@ -282,7 +282,12 @@ def signal_Jy_pix(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_a
     signal = signal_MJy_sr(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size)
     return signal*(1e6)*((((pix_size/60))*(np.pi/180))**2)
 
-signal_output = signal_Jy_pix(14.11e9, 0.216, 8e14, 0.24, 0.67, 0, -0.33, -0.82, 0, 0.5, f_thermal, [14.11e9, 1258.93 ], 512, 2/60) # pix size in arcmin
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#signal_output = signal_Jy_pix(14.11e9, 0.216, 8e14, 0.24, 0.67, 0, -0.33, -0.82, 0, 0.5, f_thermal, [14.11e9, 1258.93 ], 512, 2/60) # pix size in arcmin
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#!!!!!!!!!!!!I cant use this code to change the redshift because i havent scaled the bubble parameters to changewith redshift yet
+signal_output = signal_Jy_pix(14.11e9, 0.216, 8e14, 0.24, 0.67, 0, -0.33, -0.82, 0, 0.5, f_nonthermal, [14.11e9, 100, 1e5, 6], 512, 2/60) # pix size in arcmin
 
 pyplot.imshow(signal_output)
 pyplot.colorbar()
@@ -290,7 +295,7 @@ pyplot.show()
 
 from astropy.io import fits
 
-f = fits.open('./MS0735_sims/MS0735_correct/ymap_template.fits')
+f = fits.open('./ymap_template.fits')
 
 f.info()
 
@@ -316,7 +321,7 @@ f[0].header['crpix2'] = 257
 
 f.verify('fix')
 
-f.writeto('./MS0735_sims/MS0735_correct/ms0735_thermal_Jy_pix_MUSTANG_upperkTe.fits', overwrite=True)
+#f.writeto('./MS0735_sims/MS0735_correct/ms0735_nonthermal_37p5ghz.fits', overwrite=True)
 
 f.info()
 
