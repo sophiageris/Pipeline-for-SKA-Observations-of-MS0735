@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Original file name
+original_file="example_profile_commands.sh"
+
+# Loop to copy and rename the file 3 times
+for i in {1..20}; do
+    new_file="example_profile_commands_$i.sh"
+    cp "$original_file" "$new_file"
+    sed -i "36s|.*|sim_ms0735_8hr_$i.fits|" "$new_file"
+    sed -i "37s|.*|sim_ms0735_8hr_$i|" "$new_file"
+done
