@@ -79,9 +79,6 @@ def inte_total(z, M_500):
 def inte_500(z, M_500):
     return quad(inte, 0, r_500(z, M_500), args=(z, M_500))[0]
 
-Y_int_ana = scipy.special.gamma((3-gamma)/alpha)*scipy.special.gamma((beta-3)/alpha)/alpha/scipy.special.gamma((beta-gamma)/alpha)*r_s(0.5, 3.25e14)**3
-Y_int_num = inte_total(0.5, 3.25e14)
-
 def y_500_num(z, M500): #in arcmin^2 (scaling relation from Planck Collaboration: https://arxiv.org/pdf/1303.5080.pdf)
     Ez=cosmo.efunc(z)
     DA=cosmo.angular_diameter_distance(z).value/radian # in Mpc/arcmin
@@ -235,10 +232,7 @@ def ymap_cluster_bubbles(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func,
     
     return total_y
 
-y_map = ymap_cluster_bubbles(14.11e9, 0.216, 8e14, 0.24, 0.67, 0, -0.33, -0.82, 0, 0.5, f_nonthermal, [14.11e9, 100, 1e5, 6], 512, 2/60)
-
-
-def calculating_ymap_total(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size):
+def calculating_ymap_total(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size): # this calculates Ytot of the y-map that has been created
     
     ymap_whole = ymap_cluster_bubbles(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size)
 
@@ -246,23 +240,25 @@ def calculating_ymap_total(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_fun
     
     return ymap_total
 
-def signal_MJy_sr(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size): # calculating the signal in MJy/sr by multiplying the cluster (without bubbles) ymap by spectral distortion g_x and subtracting bubble y map (suppressed integral from -z to +z) times modified spectral distortion g_tilde times the factor 270.33 which comes from Tony Mroczkowski [2019] sz review paper 
+def signal_MJy_sr(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size): # calculating the signal in MJy/sr by multiplying the cluster (without bubbles) ymap by spectral distortion g_x and subtracting bubble y map (suppressed integral from -z to +z) times modified spectral distortion g_tilde times the factor 270.33 which comes from Tony Mroczkowski [2019] sz review paper https://arxiv.org/pdf/1811.02310.pdf
     return 270.33*g_x(nu)*(ymap_cluster(nu, z, M_500, xb, yb, rb, num_pix, pix_size) - ymap_bubbles(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size)) # in MJy/sr 
 
-def signal_Jy_pix(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size): # to get the signal in Jy/pix I multiply by 1e6 to convert from MJy to Jy (pix_size/60))*(np.pi/180))**2 aqnd then multiply by pix_size (divided by 60 to convert to degrees I think) and then squared to get the area and I think the pi/180 to converting to sr or something but this is what Yvette did in the code she sent me called 'sim_MS0735.py' so I think it's right
+def signal_Jy_pix(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size): # to get the signal in Jy/pix I multiply by 1e6 to convert from MJy to Jy and (pix_size/60))*(np.pi/180))**2 
     signal = signal_MJy_sr(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size)
     return signal*(1e6)*((((pix_size/60))*(np.pi/180))**2)
 
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# for thermal bubbles where kTe of MS0735 comes from the results of the suppression factor in Abdulla et al [2019] https://arxiv.org/pdf/1806.05050.pdf
 #signal_output = signal_Jy_pix(14.11e9, 0.216, 8e14, 0.24, 0.67, 0, -0.33, -0.82, 0, 0.5, f_thermal, [14.11e9, 1258.93 ], 512, 2/60) # pix size in arcmin
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+# for non-thermal bubbles where p_1 of MS0735 comes from the results of the suppression factor in Abdulla et al [2019] https://arxiv.org/pdf/1806.05050.pdf
 #This code can't be used to change the redshift because i havent scaled the bubble parameters to change with redshift yet
 signal_output = signal_Jy_pix(14.11e9, 0.216, 8e14, 0.24, 0.67, 0, -0.33, -0.82, 0, 0.5, f_nonthermal, [14.11e9, 100, 1e5, 6], 512, 2/60) # pix size in arcmin
 
 pyplot.imshow(signal_output)
 pyplot.colorbar()
 pyplot.show()
+
+# create the fits file of the signal map to use as input for the Profile simulations:
 
 from astropy.io import fits
 
