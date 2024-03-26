@@ -5,14 +5,10 @@ Created on Tue Oct 17 23:24:43 2023
 
 @author: sophiageris
 """
-
-import astropy
-from timeit import default_timer as timer
 from matplotlib import pyplot
 import scipy
 import numpy as np
 from scipy.integrate import quad
-import math
 from scipy import integrate
 from scipy.special import kn
 import scipy.special as sc
@@ -35,7 +31,6 @@ omega_lambda_0 = 0.7
 c_km = 299792
 radian = 3437.75 # 1radian = 3437.75arcmin
 c_500 = 1.177
-#j = 16020000 # conversion factor from joules to Janskys
 c_m = 3e8 # speed of light in m/s
 
 s = np.linspace(-10, 9, 1000)
@@ -44,7 +39,6 @@ cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
 #defining pixel grid
 def create_pixgrid(num_pix, pix_size):
     ex = np.arange((-num_pix/2)*pix_size, ((((num_pix/2))*pix_size)), pix_size) # pix width in arcmin
-    #print(ex)
     y = np.arange((-num_pix/2)*pix_size, ((((num_pix/2))*pix_size)), pix_size) # pix height in armin
     x_1, y_1 = np.meshgrid(ex, y)
     theta_proj = ((((x_1)**2)+((y_1)**2))**0.5) # projected radius of each pixel on the sky in arcmin
@@ -54,7 +48,6 @@ def x(nu):
     return (h*nu)/(k*T_cmb)
 
 def D_A(z): 
-    #d_phys = (c_km*z)/(H_0*np.sqrt(omega_lambda_0))
     d_a = (cosmo.angular_diameter_distance(z).value) # in Mpc
     return (d_a/radian) # D_A in Mpc/arcmin
 
@@ -88,8 +81,6 @@ def inte_500(z, M_500):
 
 Y_int_ana = scipy.special.gamma((3-gamma)/alpha)*scipy.special.gamma((beta-3)/alpha)/alpha/scipy.special.gamma((beta-gamma)/alpha)*r_s(0.5, 3.25e14)**3
 Y_int_num = inte_total(0.5, 3.25e14)
-#print(Y_int_ana)
-#print(Y_int_num)
 
 def y_500_num(z, M500): #in arcmin^2 (scaling relation from Planck Collaboration: https://arxiv.org/pdf/1303.5080.pdf)
     Ez=cosmo.efunc(z)
@@ -124,22 +115,12 @@ def Bounds(rb, xb, yb, zb, num_pix, pix_size, z):
             Z_plus.append(zed_plus)
     z_plus = np.reshape(np.array(Z_plus),y_los1.shape)
             
-    for i in range(len(ex)):#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        for j in range(len(y)):#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            zed_minus = ((-np.sqrt((rb**2)-((x_1[i][j]-xb)**2)-((y_1[i][j]-yb)**2))) + zb)*da # in Mpc !!!!!!!!!!!WHEN I DO MUSTANG SIMS MAKE SURE ZB SHOULD BE + FOR BOTH THE + AND - BOUNDS!!!!!!!!!!
-            Z_minus.append(zed_minus)#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    z_minus = np.reshape(np.array(Z_minus),y_los1.shape)#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    return z_plus, z_minus#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-'''def Bounds2(rb, x_1, xb2, y_1, yb2, zb2, start, stop, pix_size):
-    Z2 = []
-    x_1, y_1, theta_proj, ex, y = create_pixgrid(start, stop, pix_size)
     for i in range(len(ex)):
         for j in range(len(y)):
-            z2 = np.sqrt((rb**2)-((x_1[i][j]-xb2)**2)-((y_1[i][j]-yb2)**2)) + zb2
-            Z2.append(z2)
-    return Z2'''
+            zed_minus = ((-np.sqrt((rb**2)-((x_1[i][j]-xb)**2)-((y_1[i][j]-yb)**2))) + zb)*da 
+            Z_minus.append(zed_minus)
+    z_minus = np.reshape(np.array(Z_minus),y_los1.shape)
+    return z_plus, z_minus
 
 def smax(p):
     return 2*np.arcsinh(p)
@@ -205,10 +186,6 @@ def ymap_cluster(nu, z, M_500, xb, yb, rb, num_pix, pix_size): # ymap of the clu
     ymap_cl = ymap(nu, z, M_500, xb, yb, rb, num_pix, pix_size, -np.inf, np.inf)
     return ymap_cl
 
-
-#ymap_cluster2 = ymap_cluster(14.11e9, 0.5, 3.25e14, 0.24, 0.67, 0.5, -total_range, total_range, 0.033333333)
-#pyplot.imshow(ymap_cluster2)
-
 def g_tilde_thermal(nu, kT_e):
     j_x_values = integrate.dblquad(integrand, 0, np.inf, 0, np.inf, args=(nu, kT_e))[0] 
     return ((j_x_values-blackbody(1, nu))*m_ec2)/(kT_e)
@@ -241,11 +218,8 @@ def f_nonthermal(nu, p_1, p_2, alpha2):
 def ymap_bubbles(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size): #ymap of the bubbles ie. ymap is zero everywhere but in the bubble regions I'm calculating ymap by integrating over line of sight but when line of sight from -z to +z and am suppressing the signal by f (so leaving out the l.o.s parts -inf to -z and +z to +inf)
     Z_plus, Z_minus = Bounds(rb, xb, yb, zb, num_pix, pix_size, z)
     Z_plus2, Z_minus2 = Bounds(rb, xb2, yb2, zb2, num_pix, pix_size, z)
-    #print(Z_plus, Z_minus)
     
     f = supp_func(*supp_args)
-    #f=1.5
-    print(f)
 
     bubble1 = f*ymap(nu, z, M_500, xb, yb, rb, num_pix, pix_size, Z_minus, Z_plus)
     bubble2 = f*ymap(nu, z, M_500, xb2, yb2, rb, num_pix, pix_size, Z_minus2, Z_plus2)
@@ -272,9 +246,6 @@ def calculating_ymap_total(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_fun
     
     return ymap_total
 
-#total = calculating_ymap_total(14.11e9, 0.216, 8e14, 0.24, 0.67, 0, -0.33, -0.82, 0, 0.5, f_thermal, [14.11e9, 1000], 512, 2/60)
-#print(total)
-
 def signal_MJy_sr(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size): # calculating the signal in MJy/sr by multiplying the cluster (without bubbles) ymap by spectral distortion g_x and subtracting bubble y map (suppressed integral from -z to +z) times modified spectral distortion g_tilde times the factor 270.33 which comes from Tony Mroczkowski [2019] sz review paper 
     return 270.33*g_x(nu)*(ymap_cluster(nu, z, M_500, xb, yb, rb, num_pix, pix_size) - ymap_bubbles(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_args, num_pix, pix_size)) # in MJy/sr 
 
@@ -286,7 +257,7 @@ def signal_Jy_pix(nu, z, M_500, xb, yb, zb, xb2, yb2, zb2, rb, supp_func, supp_a
 #signal_output = signal_Jy_pix(14.11e9, 0.216, 8e14, 0.24, 0.67, 0, -0.33, -0.82, 0, 0.5, f_thermal, [14.11e9, 1258.93 ], 512, 2/60) # pix size in arcmin
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#!!!!!!!!!!!!I cant use this code to change the redshift because i havent scaled the bubble parameters to changewith redshift yet
+#This code can't be used to change the redshift because i havent scaled the bubble parameters to change with redshift yet
 signal_output = signal_Jy_pix(14.11e9, 0.216, 8e14, 0.24, 0.67, 0, -0.33, -0.82, 0, 0.5, f_nonthermal, [14.11e9, 100, 1e5, 6], 512, 2/60) # pix size in arcmin
 
 pyplot.imshow(signal_output)
@@ -301,10 +272,6 @@ f.info()
 
 f[0].data = signal_output
 
-#cl = ymap_cluster(14.11e9, 0.216, 8.4e14, 0.24, 0.67, 0.5, -10, 10, 0.078125)*g_x(14.11e9)
-#print(cl)
-
-#Print the corresponding values
 f.info()
 
 f[0].header['cdelt1'] = -0.000555556
